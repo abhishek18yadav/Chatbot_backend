@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
   {
@@ -34,19 +35,27 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    date: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
   },
 );
-userSchema.pre("save", function saveAvatar(next) {
+userSchema.pre("save", async function () {
   const user = this;
-  const saltRounds = 10;
-  const salt = bcrypt.genSaltSync(saltRounds);
-  const hassehPassword = bcrypt.hash(user.password, salt);
-  user.password = hassehPassword;
-  user.avatar = ` https://robohash.org/${user.username}`;
-  next();
-})
+
+  if (user.isModified("password")) {
+    const saltRounds = 10;
+    user.password = await bcrypt.hash(user.password, saltRounds);
+  }
+
+  if (user.isModified("name") || user.isModified("email")) {
+    user.avatar = `https://robohash.org{user.name || user.email}`;
+  }
+});
 const User = mongoose.model("User", userSchema);
 export default User;

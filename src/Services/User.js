@@ -7,6 +7,7 @@ import ClientError from "../Utils/Errors/ClientError.js";
 export const signUpService = async (data) => {
   try {
     const newUser = await userRepository.create(data);
+    
     return newUser;
   } catch (error) {
     if (error.name === "ValidationError") {
@@ -31,7 +32,7 @@ export const signInServices = async (data) => {
       });
     }
     const inMatch = await bcrypt.compare(data.password, user.password);
-    if (inMatch) {
+    if (!inMatch) {
       throw new ClientError({
         message: `invalid password! please try again`,
         statuscode: StatusCodes.BAD_REQUEST,
@@ -44,7 +45,6 @@ export const signInServices = async (data) => {
       email: user.email,
       avatar: user.avatar,
       _id: user._id,
-      token: createJWT({ id: user._id, email: user.email }),
     };
   } catch (error) {
     console.log("user service error", error);
